@@ -378,7 +378,7 @@ class Parser:
 		))
 
 	def power(self):
-		return self.bin_op(self.atom, (TT_POW, ), self.factor)
+		return self.binar_op(self.atom, (TT_POW, ), self.factor)
 
 	def factor(self):
 		res = ParseResult()
@@ -394,7 +394,26 @@ class Parser:
 		return self.power()
 
 	def term(self):
-		return self.bin_op(self.factor, (TT_MUL, TT_DIV))
+		return self.binar_op(self.factor, (TT_MUL, TT_DIV))
+
+	def arithm_expr(self):
+		return self.binar_op(self.term(), (TT_PLUS, TT_MINUS))
+
+	def compar_expr(self):
+		res = ParseResult()
+		if self.current_tok.matches(TT_KEYWORD, "not"):
+			oper_tok = self.current_tok
+			res.register_advancement()
+			self.advance()
+			node = res.register(self.compar_expr())
+			if res.error: return res
+			return res.success(UnaryOpNode(oper_tok, node))
+		node = res.register(self.binar_op(self.arithm_expr, (TT_EE, TT_NE, TT_LT, TT_GT, TT_LTE, TT_GTE))
+		if res.error:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected int, float, identifier, '+', '-', '(', 'not'"
+			))
 
 	def expr(self):
 		res = ParseResult()
@@ -425,7 +444,7 @@ class Parser:
 			if res.error: return res
 			return res.success(VarAssignNode(var_name, expr))
 
-		node = res.register(self.bin_op(self.term, (TT_PLUS, TT_MINUS)))
+		node = res.register(self.binar_op(self.compar_expr, ((TT_KEYWORD, "and"), (TT_KEYWORD, 'or'))))
 
 		if res.error:
 			return res.failure(InvalidSyntaxError(
@@ -436,7 +455,7 @@ class Parser:
 		return res.success(node)
 
 
-	def bin_op(self, func_a, ops, func_b=None):
+	def binar_op(self, func_a, ops, func_b=None):
 		if func_b == None:
 			func_b = func_a
 
@@ -444,7 +463,7 @@ class Parser:
 		left = res.register(func_a())
 		if res.error: return res
 
-		while self.current_tok.type in ops:
+		while self.current_tok.type in ops or (self.current_tok.type, self.current_tok.value) in ops:
 			op_tok = self.current_tok
 			res.register_advancement()
 			self.advance()
