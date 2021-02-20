@@ -70,7 +70,7 @@ class Position:
 	def copy(self):
 		return Position(self.idx, self.ln, self.col, self.fn, self.ftxt)
 
-TT_INT				= 'INT'
+TT_INT			= 'INT'
 TT_FLOAT    	= 'FLOAT'
 TT_IDENTIFIER	= 'IDENTIFIER'
 TT_KEYWORD		= 'KEYWORD'
@@ -78,14 +78,14 @@ TT_PLUS     	= 'PLUS'
 TT_MINUS    	= 'MINUS'
 TT_MUL      	= 'MUL'
 TT_DIV      	= 'DIV'
-TT_POW				= 'POW'
-TT_EQ					= 'EQ'
+TT_POW			= 'POW'
+TT_EQ			= 'EQ'
 TT_LPAREN   	= 'LPAREN'
 TT_RPAREN   	= 'RPAREN'
-TT_EOF				= 'EOF'
+TT_EOF			= 'EOF'
 
 KEYWORDS = [
-	'vr'
+	'var'
 ]
 
 class Token:
@@ -339,7 +339,7 @@ class Parser:
 	def expr(self):
 		res = ParseResult()
 
-		if self.current_tok.matches(TT_KEYWORD, 'vr'):
+		if self.current_tok.matches(TT_KEYWORD, 'var'):
 			res.register_advancement()
 			self.advance()
 
@@ -370,7 +370,7 @@ class Parser:
 		if res.error:
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'vr', int, float, identifier, '+', '-' or '('"
+				"Expected 'var', int, float, identifier, '+', '-' or '('"
 			))
 
 		return res.success(node)
@@ -562,7 +562,8 @@ class Interpreter:
 		else:
 			return res.success(number.set_pos(node.pos_start, node.pos_end))
 
-global_symbol_table = SymbolTable()
+global_symbol_table =
+ SymbolTable()
 global_symbol_table.set("null", Number(0))
 
 def run(fn, text):
