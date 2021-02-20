@@ -22,6 +22,10 @@ class IllegalCharError(Error):
 	def __init__(self, pos_start, pos_end, details):
 		super().__init__(pos_start, pos_end, 'Illegal Character', details)
 
+class ExpectedCharError(Error):
+	def __init__(self, pos_start, pos_end, details):
+		super().__init__(pos_start, pos_end, 'Expected Character', details)
+
 class InvalidSyntaxError(Error):
 	def __init__(self, pos_start, pos_end, details=''):
 		super().__init__(pos_start, pos_end, 'Invalid Syntax', details)
@@ -32,12 +36,12 @@ class RTError(Error):
 		self.context = context
 
 	def as_string(self):
-		result  = self.generate_traceback()
+		result  = self.gen_traceback()
 		result += f'{self.error_name}: {self.details}'
 		result += '\n\n' + string_with_arrows(self.pos_start.ftxt, self.pos_start, self.pos_end)
 		return result
 
-	def generate_traceback(self):
+	def gen_traceback(self):
 		result = ''
 		pos = self.pos_start
 		ctx = self.context
@@ -82,10 +86,19 @@ TT_POW			= 'POW'
 TT_EQ			= 'EQ'
 TT_LPAREN   	= 'LPAREN'
 TT_RPAREN   	= 'RPAREN'
+TT_EE			= 'EE'
+TT_NE			= 'NE'
+TT_LT			= 'LT'
+TT_GT			= 'GT'
+TT_LTE			= 'LTE'
+TT_GTE			= 'GTE'
 TT_EOF			= 'EOF'
 
 KEYWORDS = [
-	'var'
+	'var',
+	'and',
+	'or',
+	'not'
 ]
 
 class Token:
@@ -145,15 +158,22 @@ class Lexer:
 			elif self.current_char == '^':
 				tokens.append(Token(TT_POW, pos_start=self.pos))
 				self.advance()
-			elif self.current_char == '=':
-				tokens.append(Token(TT_EQ, pos_start=self.pos))
-				self.advance()
 			elif self.current_char == '(':
 				tokens.append(Token(TT_LPAREN, pos_start=self.pos))
 				self.advance()
 			elif self.current_char == ')':
 				tokens.append(Token(TT_RPAREN, pos_start=self.pos))
-				self.advance()
+				self.advance
+			elif self.current_char == '!':
+				tok, error = self.make_not_equal()
+				if error: return[], error
+				tokens.append(tok)
+			elif self.current_char == '=':
+				tokens.append(self.make_equal())
+			elif self.current_char == '<':
+				tokens.append(self.make_less_than())
+			elif self.current_char == '>':
+				tokens.append(self.make_greater_than())
 			else:
 				pos_start = self.pos.copy()
 				char = self.current_char
@@ -191,6 +211,46 @@ class Lexer:
 		tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
 		return Token(tok_type, id_str, pos_start, self.pos)
 
+	def make_not_equal(self):
+		pos_start = self.pos.copy()
+		self.advance()
+
+		if self.current_char == '=':
+			self.advance()
+			return Token(TT_NE, pos_start = pos_start, pos_end = self.pos), None
+
+		self.advance()
+		return None, ExpectedCharError(pos_start, self.pos, "'=' (after '!')")
+
+	def make_equal(self):
+		pos_start = self.pos.copy()
+		self.advance()
+
+		if self.current_char == '=':
+			self.advance()
+			tok_type = TT_EE
+
+		return Token(tok_type, pos_start = pos_start, pos_end = self.pos)
+
+	def make_less_than(self):
+		pos_start = self.pos.copy()
+		self.advance()
+
+		if self.current_char == '=':
+			self.advance()
+			tok_type = TT_LTE
+
+		return Token(tok_type, pos_start = pos_start, pos_end = self.pos)
+
+	def make_greater_than(self):
+		pos_start = self.pos.copy()
+		self.advance()
+
+		if self.current_char == '=':
+			self.advance()
+			tok_type = TT_GTE
+
+		return Token(tok_type, pos_start = pos_start, pos_end = self.pos)
 class NumberNode:
 	def __init__(self, tok):
 		self.tok = tok
@@ -562,8 +622,7 @@ class Interpreter:
 		else:
 			return res.success(number.set_pos(node.pos_start, node.pos_end))
 
-global_symbol_table =
- SymbolTable()
+global_symbol_table = SymbolTable()
 global_symbol_table.set("null", Number(0))
 
 def run(fn, text):
