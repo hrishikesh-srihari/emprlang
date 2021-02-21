@@ -5,7 +5,7 @@ DIGITS = '0123456789'
 LETTERS = string.ascii_letters
 LETTERS_DIGITS = LETTERS + DIGITS
 
-# ERROR HANDLING
+# ERROR HANDLING ##############################
 
 class Error:
 	def __init__(self, pos_start, pos_end, error_name, details):
@@ -55,7 +55,7 @@ class RTError(Error):
 
 		return 'Traceback (most recent call last):\n' + result
 
-# POSITION
+# POSITION ##############################
 
 class Position:
 	def __init__(self, idx, ln, col, fn, ftxt):
@@ -78,7 +78,7 @@ class Position:
 	def copy(self):
 		return Position(self.idx, self.ln, self.col, self.fn, self.ftxt)
 
-# TOKENS
+# TOKENS ##############################
 
 TT_INT			= 'INT'
 TT_FLOAT    	= 'FLOAT'
@@ -86,18 +86,18 @@ TT_IDENTIFIER	= 'IDENTIFIER'
 TT_KEYWORD		= 'KEYWORD'
 TT_PLUS     	= 'PLUS'
 TT_MINUS    	= 'MINUS'
-TT_MUL      	= 'MUL'
-TT_DIV      	= 'DIV'
-TT_POW			= 'POW'
-TT_EQ			= 'EQ'
-TT_LPAREN   	= 'LPAREN'
-TT_RPAREN   	= 'RPAREN'
-TT_EE			= 'EE' #
-TT_NE			= 'NE' #
-TT_LT			= 'LT' #
-TT_GT			= 'GT' #
-TT_LTE			= 'LTE' #
-TT_GTE			= 'GTE' #
+TT_MUL      	= 'MUL' #MULTIPLICATION
+TT_DIV      	= 'DIV' #DIVISION
+TT_POW			= 'POW' #EXPONENTS/POWERS
+TT_EQ			= 'EQ' #EQUAL TO
+TT_LPAREN   	= 'LPAREN' #LEFT PARENTHESES
+TT_RPAREN   	= 'RPAREN' #RIGHT PARENTHESES
+TT_EE			= 'EE' #DOUBLE EQUALS
+TT_NE			= 'NE' #NOT EQUALS
+TT_LT			= 'LT' #LESS THAN
+TT_GT			= 'GT' #GREATER THAN
+TT_LTE			= 'LTE' #LESS THAN OR EQUAL TO
+TT_GTE			= 'GTE' #GREATER THAN OR EQUAL TO
 TT_EOF			= 'EOF'
 
 KEYWORDS = [
@@ -131,7 +131,7 @@ class Token:
 		if self.value: return f'{self.type}:{self.value}'
 		return f'{self.type}'
 
-# LEXER
+# LEXER ##############################
 
 class Lexer:
 	def __init__(self, fn, text):
@@ -267,7 +267,7 @@ class Lexer:
 
 		return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
-# NODES
+# NODES ##############################
 
 class NumberNode:
 	def __init__(self, tok):
@@ -325,7 +325,7 @@ class IfNode:
 		self.pos_start = self.cases[0][0].pos_start
 		self.pos_end = (self.else_case or self.cases[len(self.cases) - 1][0]).pos_end
 
-# PARSE RESULT
+# PARSE RESULT ##############################
 
 class ParseResult:
 	def __init__(self):
@@ -350,7 +350,7 @@ class ParseResult:
 			self.error = error
 		return self
 
-# PARSER
+# PARSER ##############################
 
 class Parser:
 	def __init__(self, tokens):
@@ -571,7 +571,7 @@ class Parser:
 
 		return res.success(left)
 
-# RUNTIME RESULT
+# RUNTIME RESULT ##############################
 
 class RTResult:
 	def __init__(self):
@@ -590,7 +590,7 @@ class RTResult:
 		self.error = error
 		return self
 
-# VALUES
+# VALUES ##############################
 
 class Number:
 	def __init__(self, value):
@@ -688,7 +688,7 @@ class Context:
 		self.parent_entry_pos = parent_entry_pos
 		self.symbol_table = None
 
-# SYMBOL TABLE
+# SYMBOL TABLE ##############################
 
 class SymbolTable:
 	def __init__(self):
@@ -707,7 +707,7 @@ class SymbolTable:
 	def remove(self, name):
 		del self.symbols[name]
 
-# INTERPRETER
+# INTERPRETER ##############################
 
 class Interpreter:
 	def visit(self, node, context):
@@ -717,8 +717,6 @@ class Interpreter:
 
 	def no_visit_method(self, node, context):
 		raise Exception(f'No visit_{type(node).__name__} method defined')
-
-	###################################
 
 	def visit_NumberNode(self, node, context):
 		return RTResult().success(
@@ -825,7 +823,7 @@ class Interpreter:
 		return res.success(None)
 
 
-# RUN METHOD
+# RUN METHOD ##############################
 
 global_symbol_table = SymbolTable()
 global_symbol_table.set("null", Number(0))
