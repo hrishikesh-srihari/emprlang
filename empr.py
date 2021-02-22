@@ -80,25 +80,27 @@ class Position:
 
 # TOKENS ##############################
 
-TT_INT			= 'INT'
-TT_FLOAT    	= 'FLOAT'
-TT_IDENTIFIER	= 'IDENTIFIER'
-TT_KEYWORD		= 'KEYWORD'
-TT_PLUS     	= 'PLUS'
-TT_MINUS    	= 'MINUS'
-TT_MUL      	= 'MUL' #MULTIPLICATION
-TT_DIV      	= 'DIV' #DIVISION
-TT_POW			= 'POW' #EXPONENTS/POWERS
-TT_EQ			= 'EQ' #EQUAL TO
-TT_LPAREN   	= 'LPAREN' #LEFT PARENTHESES
-TT_RPAREN   	= 'RPAREN' #RIGHT PARENTHESES
-TT_EE			= 'EE' #DOUBLE EQUALS
-TT_NE			= 'NE' #NOT EQUALS
-TT_LT			= 'LT' #LESS THAN
-TT_GT			= 'GT' #GREATER THAN
-TT_LTE			= 'LTE' #LESS THAN OR EQUAL TO
-TT_GTE			= 'GTE' #GREATER THAN OR EQUAL TO
-TT_EOF			= 'EOF'
+TT_INT				= 'INT'
+TT_FLOAT    	 = 'FLOAT'
+TT_IDENTIFIER  = 'IDENTIFIER'
+TT_KEYWORD	= 'KEYWORD'
+TT_PLUS     	  = 'PLUS'
+TT_MINUS       = 'MINUS'
+TT_MUL      	 = 'MUL' #MULTIPLICATION
+TT_DIV      	  = 'DIV' #DIVISION
+TT_POW		    = 'POW' #EXPONENTS/POWERS
+TT_EQ			  = 'EQ' #EQUAL TO
+TT_LPAREN     = 'LPAREN' #LEFT PARENTHESES
+TT_RPAREN     = 'RPAREN' #RIGHT PARENTHESES
+TT_EE			   = 'EE' #DOUBLE EQUALS
+TT_NE			  = 'NE' #NOT EQUALS
+TT_LT			    = 'LT' #LESS THAN
+TT_GT			   = 'GT' #GREATER THAN
+TT_LTE			   = 'LTE' #LESS THAN OR EQUAL TO
+TT_GTE			   = 'GTE' #GREATER THAN OR EQUAL TO
+TT_EOF			  = 'EOF'
+TT_COMMA    = 'COM'
+TT_ARROW     = 'ARR'
 
 # KEYWORDS ##############################
 
@@ -114,7 +116,8 @@ KEYWORDS = [
 	'for',
 	'to',
 	'iter',
-	'while'
+	'while',
+	'func'
 ]
 
 class Token:
@@ -171,8 +174,7 @@ class Lexer:
 				tokens.append(Token(TT_PLUS, pos_start=self.pos))
 				self.advance()
 			elif self.current_char == '-':
-				tokens.append(Token(TT_MINUS, pos_start=self.pos))
-				self.advance()
+				tokens.append(self.make_minus_arrow())
 			elif self.current_char == '*':
 				tokens.append(Token(TT_MUL, pos_start=self.pos))
 				self.advance()
@@ -197,7 +199,10 @@ class Lexer:
 			elif self.current_char == '<':
 				tokens.append(self.make_less_than())
 			elif self.current_char == '>':
-				tokens.append(self.make_greater_than())
+				tokens.append(self.make_greater_than
+			elif self.current_char == ',':
+				tokens.append(Token(TT_COMMA, pos_start=self.pos))
+				self.advance()
 			else:
 				pos_start = self.pos.copy()
 				char = self.current_char
@@ -239,6 +244,18 @@ class Lexer:
 		tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
 		return Token(tok_type, id_str, pos_start, self.pos)
 
+# MAKE MINUS OR ARROW ##############################
+
+	def make_minus_arrow(self):
+		tok_type = TT_MINUS
+		pos_start = self.pos.copy()
+		self.advance()
+
+		if self.current_char == '>':
+			self.advance()
+			tok_type = TT_ARROW
+
+		return Token(tok_type, pos_start = pos_start, pos_end = self.pos)
 # MAKE NOT EQUALS ##############################
 
 	def make_not_equals(self):
