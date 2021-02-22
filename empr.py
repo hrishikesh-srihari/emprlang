@@ -108,7 +108,11 @@ KEYWORDS = [
 	'if',
 	'else',
 	'elif',
-	'then'
+	'then',
+	'for',
+	'to',
+	'iter',
+	'while'
 ]
 
 class Token:
