@@ -100,6 +100,8 @@ TT_LTE			= 'LTE' #LESS THAN OR EQUAL TO
 TT_GTE			= 'GTE' #GREATER THAN OR EQUAL TO
 TT_EOF			= 'EOF'
 
+# KEYWORDS ##############################
+
 KEYWORDS = [
 	'var',
 	'and',
@@ -128,6 +130,8 @@ class Token:
 		if pos_end:
 			self.pos_end = pos_end.copy()
 
+# MATCHES ##############################
+
 	def matches(self, type_, value):
 		return self.type == type_ and self.value == value
 
@@ -145,9 +149,13 @@ class Lexer:
 		self.current_char = None
 		self.advance()
 
+# ADVANCE ##############################
+
 	def advance(self):
 		self.pos.advance(self.current_char)
 		self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+
+# MAKE TOKENS ##############################
 
 	def make_tokens(self):
 		tokens = []
@@ -199,6 +207,8 @@ class Lexer:
 		tokens.append(Token(TT_EOF, pos_start=self.pos))
 		return tokens, None
 
+# MAKE NUMBER ##############################
+
 	def make_number(self):
 		num_str = ''
 		dot_count = 0
@@ -216,6 +226,8 @@ class Lexer:
 		else:
 			return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
 
+# MAKE IDENTIFIER ##############################
+
 	def make_identifier(self):
 		id_str = ''
 		pos_start = self.pos.copy()
@@ -226,6 +238,8 @@ class Lexer:
 
 		tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
 		return Token(tok_type, id_str, pos_start, self.pos)
+
+# MAKE NOT EQUALS ##############################
 
 	def make_not_equals(self):
 		pos_start = self.pos.copy()
@@ -238,6 +252,8 @@ class Lexer:
 		self.advance()
 		return None, ExpectedCharError(pos_start, self.pos, "'=' (after '!')")
 
+# MAKE EQUALS ##############################
+
 	def make_equals(self):
 		tok_type = TT_EQ
 		pos_start = self.pos.copy()
@@ -249,6 +265,8 @@ class Lexer:
 
 		return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
+# MAKE LESS THAN ##############################
+
 	def make_less_than(self):
 		tok_type = TT_LT
 		pos_start = self.pos.copy()
@@ -259,6 +277,8 @@ class Lexer:
 			tok_type = TT_LTE
 
 		return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
+
+# MAKE GREATER THAN ##############################
 
 	def make_greater_than(self):
 		tok_type = TT_GT
@@ -283,12 +303,16 @@ class NumberNode:
 	def __repr__(self):
 		return f'{self.tok}'
 
+# VARIABLE ACCESS NODE ##############################
+
 class VarAccessNode:
 	def __init__(self, var_name_tok):
 		self.var_name_tok = var_name_tok
 
 		self.pos_start = self.var_name_tok.pos_start
 		self.pos_end = self.var_name_tok.pos_end
+
+# VARIABLE ASSIGNMENT NODE ##############################
 
 class VarAssignNode:
 	def __init__(self, var_name_tok, value_node):
@@ -297,6 +321,8 @@ class VarAssignNode:
 
 		self.pos_start = self.var_name_tok.pos_start
 		self.pos_end = self.value_node.pos_end
+
+# BINARY OPERATOR NODE ##############################
 
 class BinOperNode:
 	def __init__(self, left_node, op_tok, right_node):
@@ -310,6 +336,8 @@ class BinOperNode:
 	def __repr__(self):
 		return f'({self.left_node}, {self.op_tok}, {self.right_node})'
 
+# UNARY OPERATOR NODE
+
 class UnaryOpNode:
 	def __init__(self, op_tok, node):
 		self.op_tok = op_tok
@@ -321,6 +349,8 @@ class UnaryOpNode:
 	def __repr__(self):
 		return f'({self.op_tok}, {self.node})'
 
+# IF NODE ##############################
+
 class IfNode:
 	def __init__(self, cases, else_case):
 		self.cases = cases
@@ -328,6 +358,8 @@ class IfNode:
 
 		self.pos_start = self.cases[0][0].pos_start
 		self.pos_end = (self.else_case or self.cases[len(self.cases) - 1][0]).pos_end
+
+# FOR NODE ##############################
 
 class ForNode:
 	def __init__(self, var_name_tok, start_value_node, end_value_node, iter_value_node, body_node):
@@ -339,6 +371,8 @@ class ForNode:
 
 		self.pos_start = self.var_name_tok.pos_start
 		self.pos_end = self.body_node.pos_end
+
+# WHILE NODE ##############################
 
 class WhileNode:
 	def __init__(self, cond_node, body_node):
@@ -395,6 +429,8 @@ class Parser:
 			))
 		return res
 
+# IF EXPR ##############################
+
 	def if_expr(self):
 		res = ParseResult()
 		cases = []
@@ -409,7 +445,7 @@ class Parser:
 		res.register_advancement()
 		self.advance()
 
-		condition = res.register(self.expr())
+		cond = res.register(self.expr())
 		if res.error: return res
 
 		if not self.current_tok.matches(TT_KEYWORD, 'then'):
@@ -423,13 +459,13 @@ class Parser:
 
 		expr = res.register(self.expr())
 		if res.error: return res
-		cases.append((condition, expr))
+		cases.append((cond, expr))
 
 		while self.current_tok.matches(TT_KEYWORD, 'elif'):
 			res.register_advancement()
 			self.advance()
 
-			condition = res.register(self.expr())
+			cond = res.register(self.expr())
 			if res.error: return res
 
 			if not self.current_tok.matches(TT_KEYWORD, 'then'):
@@ -443,7 +479,7 @@ class Parser:
 
 			expr = res.register(self.expr())
 			if res.error: return res
-			cases.append((condition, expr))
+			cases.append((cond, expr))
 
 		if self.current_tok.matches(TT_KEYWORD, 'else'):
 			res.register_advancement()
@@ -453,6 +489,9 @@ class Parser:
 			if res.error: return res
 
 		return res.success(IfNode(cases, else_case))
+
+# FOR EXPR ##############################
+
 	def for_expr(self):
 		res = ParseResult()
 
@@ -908,11 +947,11 @@ class Interpreter:
 	def visit_IfNode(self, node, context):
 		res = RTResult()
 
-		for condition, expr in node.cases:
-			condition_value = res.register(self.visit(condition, context))
+		for cond, expr in node.cases:
+			cond_value = res.register(self.visit(cond, context))
 			if res.error: return res
 
-			if condition_value.is_true():
+			if cond_value.is_true():
 				expr_value = res.register(self.visit(expr, context))
 				if res.error: return res
 				return res.success(expr_value)
