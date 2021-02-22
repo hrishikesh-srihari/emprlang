@@ -561,6 +561,37 @@ class Parser:
 
 		return res.success(ForNode(var_name, start_value, end_value, iter_value, body))
 
+# WHILE EXPR ##############################
+
+	def while_expr(self):
+		res = ParseResult()
+
+		if not self.current_tok.matches(TT_KEYWORD, 'while'):
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				f"Expected 'while'"
+			))
+
+		res.register_advancement()
+		self.advance()
+
+		cond = res.register(self.expr())
+		if res.error: return res
+
+		if not self.current_tok.matches(TT_KEYWORD, 'then'):
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				f"Expected 'then'"
+			))
+
+		res.register_advancement()
+		self.advance()
+
+		body = res.register(self.expr())
+		if res.error: return res
+
+		return res.success(WhileNode(cond, body))
+
 # ATOM ##############################
 
 	def atom(self):
