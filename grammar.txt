@@ -1,8 +1,8 @@
 expr				: KEYWORD:var IDENTIFIER EQ expr
-						: compar-expr ((KEYWORD:and|KEYWORD:or) compar-expr)*
+							: compar-expr ((KEYWORD:and|KEYWORD:or) compar-expr)*
 
 compar-expr		: NOT compar-expr
-						: arithm-expr ((EE|LT|GT|LTE|GTE) arithm-expr)*
+											: arithm-expr ((EE|LT|GT|LTE|GTE) arithm-expr)*
 
 arithm-expr	:	term ((PLUS|MINUS) term)*
 
@@ -13,7 +13,7 @@ factor			: (PLUS|MINUS) factor
 
 power				: atom (POW factor)*
 
-atom 				: INT|FLOAT|IDENTIFIER
+atom 			: INT|FLOAT|IDENTIFIER
 						: LPAREN expr RPAREN
 						: if-expr
 						: for-expr
