@@ -1,9 +1,9 @@
 from string_with_arrows import *
 import string
 
-DIGITS = '0123456789'
+DIGS = '0123456789'
 LETTERS = string.ascii_letters
-LETTERS_DIGITS = LETTERS + DIGITS
+LETTERS_DIGS = LETTERS + DIGS
 
 # ERROR HANDLING ##############################
 
@@ -166,7 +166,7 @@ class Lexer:
 		while self.current_char != None:
 			if self.current_char in ' \t':
 				self.advance()
-			elif self.current_char in DIGITS:
+			elif self.current_char in DIGS:
 				tokens.append(self.make_number())
 			elif self.current_char in LETTERS:
 				tokens.append(self.make_identifier())
@@ -219,7 +219,7 @@ class Lexer:
 		dot_count = 0
 		pos_start = self.pos.copy()
 
-		while self.current_char != None and self.current_char in DIGITS + '.':
+		while self.current_char != None and self.current_char in DIGS + '.':
 			if self.current_char == '.':
 				if dot_count == 1: break
 				dot_count += 1
@@ -237,7 +237,7 @@ class Lexer:
 		id_str = ''
 		pos_start = self.pos.copy()
 
-		while self.current_char != None and self.current_char in LETTERS_DIGITS + '_':
+		while self.current_char != None and self.current_char in LETTERS_DIGS + '_':
 			id_str += self.current_char
 			self.advance()
 
@@ -477,6 +477,47 @@ class Parser:
 			))
 		return res
 
+# CALL ##############################
+
+	def call(self):
+		res = ParseResult()
+		atom = res.register(self.atom())
+		if res.error: return res
+
+		if self.current_tok.type == TT_LPAREN:
+			res.register_advancement()
+			self.advance()
+			arg_nodes = []
+
+			if self.current_tok.type == TT_RPAREN:
+				res.register_advancement()
+				self.advance()
+			else:
+				arg_nodes.append(res.register(self.expr()))
+				if res.error:
+					return res.failure(InvalidSyntaxError(
+						self.current_tok.pos_start, self.current_tok.pos_end,
+						"Expected ')', 'var', 'if', 'for', 'while', 'func', int, float, identifier, '+', '-', '(' or 'not'"
+					))
+
+				while self.current_tok.type == TT_COMMA:
+					res.register_advancement()
+					self.advance()
+
+					arg_nodes.append(res.register(self.expr()))
+					if res.error: return res
+
+				if self.current_tok.type != TT_RPAREN:
+					return res.failure(InvalidSyntaxError(
+						self.current_tok.pos_start, self.current_tok.pos_end,
+						f"Expected ',' or ')'"
+					))
+
+				res.register_advancement()
+				self.advance()
+			return res.success(CallNode(atom, arg_nodes))
+		return res.success(atom)
+
 # IF EXPR ##############################
 
 	def if_expr(self):
@@ -640,6 +681,91 @@ class Parser:
 
 		return res.success(WhileNode(cond, body))
 
+# FUNCTION DEFINITION ##############################
+
+	def func_def(self):
+		res = ParseResult()
+
+		if not self.current_tok.matches(TT_KEYWORD, 'func'):
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				f"Expected 'func'"
+			))
+
+		res.register_advancement()
+		self.advance()
+
+		if self.current_tok.type == TT_IDENTIFIER:
+			var_name_tok = self.current_tok
+			res.register_advancement()
+			self.advance()
+			if self.current_tok.type != TT_LPAREN:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					f"Expected '('"
+				))
+		else:
+			var_name_tok = None
+			if self.current_tok.type != TT_LPAREN:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					f"Expected identifier or '('"
+				))
+
+		res.register_advancement()
+		self.advance()
+		arg_name_toks = []
+
+		if self.current_tok.type == TT_IDENTIFIER:
+			arg_name_toks.append(self.current_tok)
+			res.register_advancement()
+			self.advance()
+
+			while self.current_tok.type == TT_COMMA:
+				res.register_advancement()
+				self.advance()
+
+				if self.current_tok.type != TT_IDENTIFIER:
+					return res.failure(InvalidSyntaxError(
+						self.current_tok.pos_start, self.current_tok.pos_end,
+						f"Expected identifier"
+					))
+
+				arg_name_toks.append(self.current_tok)
+				res.register_advancement()
+				self.advance()
+
+			if self.current_tok.type != TT_RPAREN:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					f"Expected ',' or ')'"
+				))
+		else:
+			if self.current_tok.type != TT_RPAREN:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					f"Expected identifier or ')'"
+				))
+
+		res.register_advancement()
+		self.advance()
+
+		if self.current_tok.type != TT_ARROW:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				f"Expected '->'"
+			))
+
+		res.register_advancement()
+		self.advance()
+		node_to_return = res.register(self.expr())
+		if res.error: return res
+
+		return res.success(FuncDefNode(
+			var_name_tok,
+			arg_name_toks,
+			node_to_return
+		))
 # ATOM ##############################
 
 	def atom(self):
@@ -684,6 +810,11 @@ class Parser:
 			while_expr = res.register(self.while_expr())
 			if res.error: return res
 			return res.success(while_expr)
+
+		elif tok.matches(TT_KEYWORD, 'func'):
+			func_expr = res.register(self.func_def())
+			if res.error: return res
+			return res.success(func_def)
 
 		return res.failure(InvalidSyntaxError(
 			tok.pos_start, tok.pos_end,
