@@ -994,6 +994,50 @@ class Interpreter:
 
 		return res.success(None)
 
+	def visit_ForNode(self, node, context):
+		res = RTResult()
+
+		start_value = res.register(self.visit(node.start_value_node, context))
+		if res.error: return res
+
+		end_value = res.register(self.visit(node.end_value_node, context))
+		if res.error: return res
+
+		if node.iter_value_node:
+			iter_value = res.register(self.visit(node.iter_value_node, context))
+			if res.error: return res
+		else:
+			iter_value = Number(1)
+
+		i = start_value.value
+
+		if iter_value.value >= 0:
+			cond = lambda: i < end_value.value
+		else:
+			cond = lambda: i > end_value.value
+
+		while cond():
+			context.symbol_table.set(node.var_name_tok.value, Number(i))
+			i += iter_value.value
+
+			res.register(self.visit(node.body_node, context))
+			if res.error: return res
+
+		return res.success(None)
+
+	def visit_WhileNode(self, node, context):
+		res = RTResult()
+
+		while True:
+			cond = res.register(self.visit(node.cond_node, context))
+			if res.error: return res
+
+			if not cond.is_true(): break
+
+			res.register(self.visit(node.body_node, context))
+			if res.error: return res
+
+		return res.success(None)
 
 # RUN METHOD ##############################
 
