@@ -27,3 +27,7 @@ for-expr		: KEYWORD:for IDENTIFIER EQ expr KEYWORD:to expr
 							(KEYWORD:iter expr)? KEYWORD:then expr
 
 while-expr	: KEYWORD:while expr KEYWORD:then expr
+
+func-def		: KEYWORD:func IDENTIFIER?
+									LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
+									ARROW expr

@@ -99,8 +99,8 @@ TT_GT			   = 'GT' #GREATER THAN
 TT_LTE			   = 'LTE' #LESS THAN OR EQUAL TO
 TT_GTE			   = 'GTE' #GREATER THAN OR EQUAL TO
 TT_EOF			  = 'EOF'
-TT_COMMA    = 'COM'
-TT_ARROW     = 'ARR'
+TT_COMMA    = 'COMMA'
+TT_ARROW     = 'ARROW'
 
 # KEYWORDS ##############################
 
