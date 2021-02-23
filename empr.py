@@ -324,6 +324,16 @@ class NumberNode:
 	def __repr__(self):
 		return f'{self.tok}'
 
+class StrNode:
+	def __init__(self, tok):
+		self.tok = tok
+
+		self.pos_start = self.tok.pos_start
+		self.pos_end = self.tok.pos_end
+
+	def __repr__(self):
+		return f'{self.tok}'
+
 class VarAccessNode:
 	def __init__(self, var_name_tok):
 		self.var_name_tok = var_name_tok
@@ -597,6 +607,11 @@ class Parser:
 			res.register_advmt()
 			self.adv()
 			return res.success(NumberNode(tok))
+
+		if tok.type == TT_STR:
+			res.register_advmt()
+			self.adv()
+			return res.success(StrNode(tok))
 
 		elif tok.type == TT_IDENTIFIER:
 			res.register_advmt()
