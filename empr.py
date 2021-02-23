@@ -81,6 +81,7 @@ class Position:
 # TOKENS #######################################
 
 TT_INT				= 'INT'
+TT_STR              = 'STRING'
 TT_FLOAT    	= 'FLOAT'
 TT_IDENTIFIER	= 'IDENTIFIER'
 TT_KEYWORD		= 'KEYWORD'
@@ -162,6 +163,8 @@ class Lexer:
 				tokens.append(self.make_number())
 			elif self.current_char in LETS:
 				tokens.append(self.make_identifier())
+			elif self.current_char == '"':
+				tokens.append(self.make_str())
 			elif self.current_char == '+':
 				tokens.append(Token(TT_PLUS, pos_start=self.pos))
 				self.adv()
@@ -220,6 +223,28 @@ class Lexer:
 			return Token(TT_INT, int(num_str), pos_start, self.pos)
 		else:
 			return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+
+	def make_str(self):
+		str = ''
+		pos_start = self.pos.copy()
+		esc_char = False
+		self.adv()
+		esc_chars = {
+			'n': '\n',
+			't': '\t'
+		}
+		while self.current_char != None and (self.current_char != '"' or esc_char):
+			if esc_char:
+				str += esc_chars.get(self.current_char, self.current_char)
+			else:
+				if self.current_char == '\\':
+					esc_char = True
+				else:
+					str += self.current_char
+			self.adv()
+			esc_char = False
+		self.adv()
+		return Token(TT_STR, str, pos_start, self.pos)
 
 	def make_identifier(self):
 		id_str = ''
