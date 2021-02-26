@@ -17,9 +17,12 @@ call        : atom (LPAREN (expr (COMMA expr)*)? RPAREN)?
 
 atom 			: INT|FLOAT|STRING|IDENTIFIER
 						: LPAREN expr RPAREN
+						: list-expr
 						: if-expr
 						: for-expr
 						: while-expr
+
+list-expr : LSQR (expr (COMMA expr)*)? RSQR
 
 if-expr			: KEYWORD:if expr KEYWORD:then expr
 							(KEYWORD:elif expr KEYWORD:then expr)*

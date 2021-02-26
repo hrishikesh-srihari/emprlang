@@ -342,6 +342,12 @@ class StrNode:
 	def __repr__(self):
 		return f'{self.tok}'
 
+class ListNode:
+	def __init__(self, element_nodes, pos_start, pos_end):
+		self.element_nodes = element_nodes
+		self.pos_start = pos_start
+		self.pos_end = pos_end
+
 class VarAccessNode:
 	def __init__(self, var_name_tok):
 		self.var_name_tok = var_name_tok
@@ -519,7 +525,7 @@ class Parser:
 		if res.error:
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'var', 'if', 'for', 'while', 'func', int, float, identifier, '+', '-', '(' or 'not'"
+				"Expected 'var', 'if', 'for', 'while', 'func', int, float, identifier, '+', '-', '(', '[' or 'not'"
 			))
 
 		return res.success(node)
@@ -541,7 +547,7 @@ class Parser:
 		if res.error:
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected int, float, identifier, '+', '-', '(' or 'not'"
+				"Expected int, float, identifier, '+', '-', '(', '[' or 'not'"
 			))
 
 		return res.success(node)
@@ -586,7 +592,7 @@ class Parser:
 				if res.error:
 					return res.failure(InvalidSyntaxError(
 						self.current_tok.pos_start, self.current_tok.pos_end,
-						"Expected ')', 'var', 'if', 'for', 'while', 'func', int, float, identifier, '+', '-', '(' or 'not'"
+						"Expected ')', 'var', 'if', 'for', 'while', 'func', int, float, identifier, '+', '-', '(', '[' or 'not'"
 					))
 
 				while self.current_tok.type == TT_COMMA:
@@ -641,6 +647,11 @@ class Parser:
 					"Expected ')'"
 				))
 
+		elif tok.type == TT_LSQR:
+			list_expr = res.register(self.list_expr())
+			if res.error: return yes
+			return res.success(list_expr)
+
 		elif tok.matches(TT_KEYWORD, 'if'):
 			if_expr = res.register(self.if_expr())
 			if res.error: return res
@@ -663,7 +674,51 @@ class Parser:
 
 		return res.failure(InvalidSyntaxError(
 			tok.pos_start, tok.pos_end,
-			"Expected int, float, identifier, '+', '-', '(', 'if', 'for', 'while', 'func'"
+			"Expected int, float, identifier, '+', '-', '(', '[' 'if', 'for', 'while', 'func'"
+		))
+
+	def list_expr(self):
+		res = ParseResult()
+		element_nodes = []
+		pos_start = self.current_tok.pos_start.copy()
+		if self.current_tok.type != TT_LSQR:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end, f"Expected '['"
+			))
+
+		res.register_advmt()
+		self.adv()
+
+		if self.current_tok.type == TT_RSQR:
+			res.register_advmt()
+			self.adv()
+		else:
+			element_nodes.append(res.register(self.expr()))
+			if res.error:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected ']', 'var', 'if', 'for', 'while', 'func', int, float, identifier, '+', '-', '(' , '[' or 'not'"
+				))
+
+			while self.current_tok.type == TT_COMMA:
+				res.register_advmt()
+				self.adv()
+
+				element_nodes.append(res.register(self.expr()))
+				if res.error: return res
+
+			if self.current_tok.type != TT_RSQR:
+				return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					f"Expected ',' or ']'"
+				))
+
+			res.register_advmt()
+			self.adv()
+		return res.success(ListNode(
+			element_nodes.
+			pos_start,
+			self.current_tok.pos_end.copy()
 		))
 
 	def if_expr(self):
