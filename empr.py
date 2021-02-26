@@ -649,7 +649,7 @@ class Parser:
 
 		elif tok.type == TT_LSQR:
 			list_expr = res.register(self.list_expr())
-			if res.error: return yes
+			if res.error: return res
 			return res.success(list_expr)
 
 		elif tok.matches(TT_KEYWORD, 'if'):
@@ -1208,6 +1208,58 @@ class Str(Value):
 	def __repr__(self):
 		return f'"{self.value}"'
 
+class List(Value):
+	def __init__(self, elements):
+		super().__init__()
+		self.elements = elements
+
+	def added_to(self, other):
+		new_list = self.copy()
+		new_list.elements.append(other)
+		return new_list, None
+
+	def subbed_by(self, other):
+		if isinstance(other, Number):
+			new_list = self.copy()
+			try:
+				new_list.elements.pop(other.value)
+				return new_list, None
+			except:
+				return None, RTError(
+					other.pos_start, other.pos_end,
+					'Element at this index could not be removed from the list becuase index is out of bounds',
+					self.context
+				)
+		else:
+			return None, Value.illegal_operation(self, other)
+
+	def multed_by(self, other):
+		if isinstance(other, List):
+			new_list = self.copy()
+			new_list.elements.extend(other)
+			return new_list, None
+		else:
+			return None, Value.illegal_operation(self, other)
+
+	def dived_by(self, other):
+		if isinstance(other, Number):
+			try:
+				return self.elements[other.value]
+			except:
+				return None, RTError(
+					other.pos_start, other.pos_end,
+					'Element at this index could not be retrieved from the list becuase index is out of bounds',
+					self.context
+				)
+		else:
+			return None, Value.illegal_operation(self, other)
+
+	def copy(self):
+		copy = List(self.elements[:])
+		copy.set_pos(self.pos_start, self.pos_end)
+		copy.set_context(self.context)
+		return copy
+
 class Function(Value):
 	def __init__(self, name, body_node, arg_names):
 		super().__init__()
@@ -1302,6 +1354,16 @@ class Interpreter:
 	def visit_StrNode(self, node, context):
 		return RTResult().success(
 			Str(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+		)
+
+	def visit_ListNode(self, node, context):
+		res = RTResult()
+		elements = []
+		for element_node in node.element_nodes:
+			elements.append(res.register(self.visit(element_node, context)))
+			if res.error: return res
+		return res.success(
+			List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
 		)
 
 	def visit_VarAccessNode(self, node, context):
