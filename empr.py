@@ -102,6 +102,8 @@ TT_GTE				= 'GTE'
 TT_COMMA			= 'COMMA'
 TT_ARROW			= 'ARROW'
 TT_EOF				= 'EOF'
+TT_LSQR           = 'LSQR'
+TT_RSQR          = 'RSQR'
 
 KEYWORDS = [
 	'var',
@@ -184,6 +186,12 @@ class Lexer:
 				self.adv()
 			elif self.current_char == ')':
 				tokens.append(Token(TT_RPAREN, pos_start=self.pos))
+				self.adv()
+			elif self.current_char == '[':
+				tokens.append(Token(TT_LSQR, pos_start=self.pos))
+				self.adv()
+			elif self.current_char == ']':
+				tokens.append(Token(TT_RSQR, pos_start=self.pos))
 				self.adv()
 			elif self.current_char == '!':
 				token, error = self.make_not_equals()
