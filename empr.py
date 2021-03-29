@@ -1307,38 +1307,19 @@ class BaseFunction(Value):
     	self.populate_args(arg_names, args, exec_ctx)
     	return res.success(None)
 
-class Function(Value):
+class Function(BaseFunction):
 	def __init__(self, name, body_node, arg_names):
-		super().__init__()
-		self.name = name or "<anonymous>"
+		super().__init__(name)
 		self.body_node = body_node
 		self.arg_names = arg_names
 
 	def execute(self, args):
 		res = RTResult()
 		interpreter = Interpreter()
-		new_context = Context(self.name, self.context, self.pos_start)
-		new_context.symbol_table = SymbolTable(new_context.parent.symbol_table)
+		exec_ctx = self.generate_new_context()
 
-		if len(args) > len(self.arg_names):
-			return res.failure(RTError(
-				self.pos_start, self.pos_end,
-				f"{len(args) - len(self.arg_names)} too many args passed into '{self.name}'",
-				self.context
-			))
-
-		if len(args) < len(self.arg_names):
-			return res.failure(RTError(
-				self.pos_start, self.pos_end,
-				f"{len(self.arg_names) - len(args)} too few args passed into '{self.name}'",
-				self.context
-			))
-
-		for i in range(len(args)):
-			arg_name = self.arg_names[i]
-			arg_value = args[i]
-			arg_value.set_context(new_context)
-			new_context.symbol_table.set(arg_name, arg_value)
+		res.register(self.check_and_populate_args(self.arg_names, args, exec_ctx))
+		if res.error: return res
 
 		value = res.register(interpreter.visit(self.body_node, new_context))
 		if res.error: return res
