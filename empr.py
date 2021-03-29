@@ -1334,6 +1334,36 @@ class Function(BaseFunction):
 	def __repr__(self):
 		return f"<function {self.name}>"
 
+class BuiltInFunction(BaseFunction):
+	def __init__(self, name):
+		super().__init__(name)
+
+	def execute(self, args):
+		res = RTResult()
+		exec_ctx = self.generate_new_context()
+
+		method_name = f'execute_{self.name}'
+		method = getattr(self, method_name, self.no_visit_method)
+
+		res.register(self.check_and_populate_args(method.arg_names, args, exec_ctx))
+		if res.error: return res
+
+		return_value = res.register(method(exec_ctx))
+		if res.error: return res
+		return res.success(return_value)
+
+	def no_visit_method(self, node, context):
+		raise Exception(f'No execute_{self.name} method defined
+
+	def copy(self):
+		copy = BuiltInFunction(self.name)
+		copy.set_context(self.context)
+		copy.set_pos(self.pos_start, self.pos_end)
+		return copy
+
+	def __repr__(self):
+		return f"<built-in function {self.name}>"
+
 # CONTEXT #######################################
 
 class Context:
