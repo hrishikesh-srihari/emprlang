@@ -490,13 +490,47 @@ class Parser:
 		return self.current_tok
 
 	def parse(self):
-		res = self.expr()
+		res = self.statements()
 		if not res.error and self.current_tok.type != TT_EOF:
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
 				"Expected '+', '-', '*', '/', '^', '==', '!=', '<', '>', <=', '>=', 'and' or 'or'"
 			))
 		return res
+
+	def statements(self):
+		res = ParseResult()
+		statements = []
+		pos_start = self.current_tok.pos_start.copy()
+
+		while self.current_tok.type == TT_NEWLINE:
+			res.register_advmt()
+			self.adv()
+
+		more_statements = True
+		statement = res.register(self.expr())
+		if res.error: return res
+		statements.append(statement)
+		while True:
+			newline_count = 0
+			while self.current_tok.type == TT_NEWLINE:
+				res.register_advmt()
+				self.adv()
+				newline_count += 1
+			if newline_count == 0:
+				more_statements == fals
+			if not more_statements: break
+			statement = res.try_register(self.expr())
+			if not statement:
+				self.reverse(res.to_reverse_count)
+				more_statements = False
+				continue
+			statements.append(statement)
+		return res.success(ListNode(
+			statements,
+			pos_start,
+			self.current_tok.pos_end.copy()
+		))
 
 	def expr(self):
 		res = ParseResult()
