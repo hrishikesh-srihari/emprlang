@@ -1393,7 +1393,7 @@ class BuiltInFunction(BaseFunction):
 			except ValueError:
 				print(f"'{text}' must be an integer. Try again.")
 		return RTResult().success(Number(number))
-	execute_input.arg_names = []
+	execute_input_int.arg_names = []
 
 	def execute_clear(self, exec_ctx):
 		os.system('cls' if os.name == 'nt' else 'clear')
