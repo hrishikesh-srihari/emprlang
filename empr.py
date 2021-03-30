@@ -103,6 +103,7 @@ TT_LTE				= 'LTE'
 TT_GTE				= 'GTE'
 TT_COMMA			= 'COMMA'
 TT_ARROW			= 'ARROW'
+TT_NEWLINE          = 'NEWLINE'
 TT_EOF				= 'EOF'
 TT_LSQR           = 'LSQR'
 TT_RSQR          = 'RSQR'
@@ -114,13 +115,14 @@ KEYWORDS = [
 	'not',
 	'if',
 	'elif',
-	'ELSE',
+	'else',
 	'for',
 	'to',
 	'iter',
 	'while',
 	'func',
-	'then'
+	'then',
+	'end'
 ]
 
 class Token:
@@ -162,6 +164,9 @@ class Lexer:
 
 		while self.current_char != None:
 			if self.current_char in ' \t':
+				self.adv
+			elif self.current_char in ';\n':
+				tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
 				self.adv()
 			elif self.current_char in DIGS:
 				tokens.append(self.make_number())
