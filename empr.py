@@ -455,6 +455,7 @@ class ParseResult:
 		self.node = None
 		self.last_registered_advance_count = 0
 		self.advance_count = 0
+		self.to_reverse_count = 0
 
 	def register_advmt(self):
 		self.last_registered_advance_count = 1
@@ -465,6 +466,12 @@ class ParseResult:
 		self.advance_count += res.advance_count
 		if res.error: self.error = res.error
 		return res.node
+
+	def try_register(self, res):
+		if res.error:
+			self.to_reverse_count = res.advance_count
+			return None
+		return self.register(res)
 
 	def success(self, node):
 		self.node = node
@@ -483,11 +490,19 @@ class Parser:
 		self.tok_idx = -1
 		self.adv()
 
-	def adv(self, ):
+	def adv(self):
 		self.tok_idx += 1
-		if self.tok_idx < len(self.tokens):
-			self.current_tok = self.tokens[self.tok_idx]
+		self.update_current_tok()
 		return self.current_tok
+
+	def reverse(self, amount=1):
+		self.tok_idx -= amount
+		self.update_current_tok()
+		return self.current_tok
+
+	def update_current_tok(self):
+		if self.tok_idx >= 0 and self.tok_idx < len(self.tokens):
+			self.current_tok = self.tokens[self.tok_idx]
 
 	def parse(self):
 		res = self.statements()
@@ -507,10 +522,10 @@ class Parser:
 			res.register_advmt()
 			self.adv()
 
-		more_statements = True
 		statement = res.register(self.expr())
 		if res.error: return res
 		statements.append(statement)
+		more_statements = True
 		while True:
 			newline_count = 0
 			while self.current_tok.type == TT_NEWLINE:
@@ -518,7 +533,7 @@ class Parser:
 				self.adv()
 				newline_count += 1
 			if newline_count == 0:
-				more_statements == fals
+				more_statements == False
 			if not more_statements: break
 			statement = res.try_register(self.expr())
 			if not statement:
