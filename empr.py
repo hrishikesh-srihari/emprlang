@@ -17,7 +17,7 @@ class Error:
 		self.details = details
 
 	def as_string(self):
-		result  = f'{self.error_name}: {self.details}\n'
+		result = f'{self.error_name}: {self.details}\n'
 		result += f'File {self.pos_start.fn}, line {self.pos_start.ln + 1}'
 		result += '\n\n' + string_with_arrows(self.pos_start.ftxt, self.pos_start, self.pos_end)
 		return result
@@ -1300,17 +1300,17 @@ class BaseFunction(Value):
 
 	def populate_args(self, arg_names, args, exec_ctx):
 		for i in range(len(args)):
-    		arg_name = arg_names[i]
-      		arg_value = args[i]
-      		arg_value.set_context(exec_ctx)
-      		exec_ctx.symbol_table.set(arg_name, arg_value)
+			arg_name = arg_names[i]
+			arg_value = args[i]
+			arg_value.set_context(exec_ctx)
+			exec_ctx.symbol_table.set(arg_name, arg_value)
 
 	def check_and_populate_args(self, arg_names, args, exec_ctx):
 		res = RTResult()
-    	res.register(self.check_args(arg_names, args))
-    	if res.error: return res
-    	self.populate_args(arg_names, args, exec_ctx)
-    	return res.success(None)
+		res.register(self.check_args(arg_names, args))
+		if res.error: return res
+		self.populate_args(arg_names, args, exec_ctx)
+		return res.success(None)
 
 class Function(BaseFunction):
 	def __init__(self, name, body_node, arg_names):
@@ -1341,24 +1341,24 @@ class Function(BaseFunction):
 
 class BuiltInFunction(BaseFunction):
 	def __init__(self, name):
-		super().__init__(name)
+  		super().__init__(name)
 
 	def execute(self, args):
-		res = RTResult()
-		exec_ctx = self.generate_new_context()
+  		res = RTResult()
+  		exec_ctx = self.generate_new_context()
 
-		method_name = f'execute_{self.name}'
-		method = getattr(self, method_name, self.no_visit_method)
+	  	method_name = f'execute_{self.name}'
+	  	method = getattr(self, method_name, self.no_visit_method)
 
-		res.register(self.check_and_populate_args(method.arg_names, args, exec_ctx))
-		if res.error: return res
+	  	res.register(self.check_and_populate_args(method.arg_names, args, exec_ctx))
+	  	if res.error: return res
 
-		return_value = res.register(method(exec_ctx))
-		if res.error: return res
-		return res.success(return_value)
+	  	return_value = res.register(method(exec_ctx))
+	  	if res.error: return res
+	  	return res.success(return_value)
 
 	def no_visit_method(self, node, context):
-		raise Exception(f'No execute_{self.name} method defined
+  		raise Exception(f'No execute_{self.name} method defined')
 
 	def copy(self):
 		copy = BuiltInFunction(self.name)
@@ -1371,24 +1371,24 @@ class BuiltInFunction(BaseFunction):
 
 	def execute_print(self, exec_ctx):
 		print(str(exec_ctx.symbol_table.get('value')))
-		reutrn RTResult().success(Number.null)
+		return RTResult().success(Number.null)
 	execute_print.arg_names = ['value']
 
 	def execute_print_return(self, exec_ctx):
 		print(str(exec_ctx.symbol_table.get('value')))
-		reutrn RTResult().success(String(str(exec_ctx.symbol_table.get('value'))))
+		return RTResult().success(Str(str(exec_ctx.symbol_table.get('value'))))
 	execute_print_return.arg_names = ['value']
 
 	def execute_input(self,exec_ctx):
 		text = input()
-		return RTResult().success(String(text))
+		return RTResult().success(Str(text))
 	execute_input.arg_names = []
 
 	def execute_input_int(self,exec_ctx):
 		while True:
 			text = input()
 			try:
-				number = int(text
+				number = int(text)
 				break
 			except ValueError:
 				print(f"'{text}' must be an integer. Try again.")
@@ -1406,7 +1406,7 @@ class BuiltInFunction(BaseFunction):
 	execute_is_num.arg_names = ['value']
 
 	def execute_is_string(self, exec_ctx):
-		is_string = isinstance(exec_ctx.symbol_table.get("value"), String)
+		is_string = isinstance(exec_ctx.symbol_table.get("value"), Str)
 		return RTResult().success(Number.true if is_string else Number.false)
 	execute_is_string.arg_names = ['value']
 
@@ -1467,7 +1467,7 @@ class BuiltInFunction(BaseFunction):
 		listA = exec_ctx.symbol_table.get("listA")
 		listB = exec_ctx.symbol_table.get("listB")
 
-		f not isinstance(listA, List):
+		if not isinstance(listA, List):
 			return RTResult().failure(RTError(
 				self.pos_start, self.pos_end,
 				"First argument must be a list",
@@ -1486,11 +1486,11 @@ class BuiltInFunction(BaseFunction):
 	execute_extend.arg_names = ['listA', 'listB']
 
 BuiltInFunction.print       = BuiltInFunction("print")
-BuiltInFunction.print_ret   = BuiltInFunction("print_return")
+BuiltInFunction.print_return   = BuiltInFunction("print_return")
 BuiltInFunction.input       = BuiltInFunction("input")
 BuiltInFunction.input_int   = BuiltInFunction("input_int")
 BuiltInFunction.clear       = BuiltInFunction("clear")
-BuiltInFunction.is_number   = BuiltInFunction("is_num")
+BuiltInFunction.is_num   = BuiltInFunction("is_num")
 BuiltInFunction.is_string   = BuiltInFunction("is_string")
 BuiltInFunction.is_list     = BuiltInFunction("is_list")
 BuiltInFunction.is_function = BuiltInFunction("is_function")
@@ -1744,19 +1744,19 @@ global_symbol_table.set("NULL", Number.null)
 global_symbol_table.set("FALSE", Number.false)
 global_symbol_table.set("TRUE", Number.true)
 global_symbol_table.set("MATH_PI", Number.math_PI)
-global_symbol_table.set("PRINT", BuiltInFunction.print)
-global_symbol_table.set("PRINT_RET", BuiltInFunction.print_return)
-global_symbol_table.set("INPUT", BuiltInFunction.input)
-global_symbol_table.set("INPUT_INT", BuiltInFunction.input_int)
-global_symbol_table.set("CLEAR", BuiltInFunction.clear)
-global_symbol_table.set("CLS", BuiltInFunction.clear)
-global_symbol_table.set("IS_NUM", BuiltInFunction.is_num)
-global_symbol_table.set("IS_STR", BuiltInFunction.is_string)
-global_symbol_table.set("IS_LIST", BuiltInFunction.is_list)
-global_symbol_table.set("IS_FUN", BuiltInFunction.is_function)
-global_symbol_table.set("APPEND", BuiltInFunction.append)
-global_symbol_table.set("POP", BuiltInFunction.pop)
-global_symbol_table.set("EXTEND", BuiltInFunction.extend)
+global_symbol_table.set("print", BuiltInFunction.print)
+global_symbol_table.set("print_ret", BuiltInFunction.print_return)
+global_symbol_table.set("input", BuiltInFunction.input)
+global_symbol_table.set("input_int", BuiltInFunction.input_int)
+global_symbol_table.set("clear", BuiltInFunction.clear)
+global_symbol_table.set("cls", BuiltInFunction.clear)
+global_symbol_table.set("is_num", BuiltInFunction.is_num)
+global_symbol_table.set("is_str", BuiltInFunction.is_string)
+global_symbol_table.set("is_list", BuiltInFunction.is_list)
+global_symbol_table.set("is_func", BuiltInFunction.is_function)
+global_symbol_table.set("append", BuiltInFunction.append)
+global_symbol_table.set("pop", BuiltInFunction.pop)
+global_symbol_table.set("extend", BuiltInFunction.extend)
 
 def run(fn, text):
 	lexer = Lexer(fn, text)
